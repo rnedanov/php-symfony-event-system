@@ -11,10 +11,10 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: "mysql://symfony:password@db:3306/symfony_event_db?serverVersion=8.0"
+      DATABASE_URL: "mysql://symfony:password@db:3306/symfony_event_db?serverVersion=8.0.42"
 
   db:
-    image: mysql:8.0
+    image: mysql:8.0.42
     container_name: symfony_event_db
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
