@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\SubscriptionType;
+use App\Entity\User;
 use App\Entity\UserSubscription;
+use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -20,7 +22,7 @@ final class UserController extends AbstractController
     {
         $user = $security->getUser();
         $allSubscriptionTypes = $em->getRepository(SubscriptionType::class)->findAll();
-        
+
         $userSubscriptionTypes = array_map(
             fn(UserSubscription $us) => $us->getSubscriptionType(),
             $user->getUserSubscriptions()->toArray()
@@ -33,35 +35,66 @@ final class UserController extends AbstractController
     }
 
     #[Route('/save-subscriptions', name: 'save_subscriptions', methods: ['POST'])]
-    public function save(Request $request, EntityManagerInterface $em, Security $security): Response
-    {
+    #[IsGranted('ROLE_USER')]
+    public function save(
+        Request $request,
+        EntityManagerInterface $em,
+        Security $security,
+        NotificationService $notificationService
+    ): Response {
         $user = $security->getUser();
         $subscriptionTypeIds = $request->request->all()['subscriptions'] ?? [];
-    
-        if (!is_array($subscriptionTypeIds)) {
-            $subscriptionTypeIds = [$subscriptionTypeIds];
-        }
+
+        $currentSubscriptionIds = array_map(
+            fn($us) => $us->getSubscriptionType()->getId(),
+            $user->getUserSubscriptions()->toArray()
+        );
+
+        $newSubscriptionIds = array_diff($subscriptionTypeIds, $currentSubscriptionIds);
 
         foreach ($user->getUserSubscriptions() as $userSubscription) {
             $em->remove($userSubscription);
         }
-        
-        // Добавляем новые подписки
+
         foreach ($subscriptionTypeIds as $typeId) {
             $subscriptionType = $em->getRepository(SubscriptionType::class)->find($typeId);
-            
+
             if ($subscriptionType) {
                 $userSubscription = new UserSubscription();
                 $userSubscription->setUser($user);
                 $userSubscription->setSubscriptionType($subscriptionType);
-                
+                $userSubscription->setSubscribedAt(new \DateTime());
                 $em->persist($userSubscription);
+
+                if (in_array($typeId, $newSubscriptionIds)) {
+                    $notificationService->sendSubscriptionNotification($user, $subscriptionType);
+                }
             }
         }
-        
+
         $em->flush();
-        
-        $this->addFlash('success', 'Subscriptions updated successfully!');
+
         return $this->redirectToRoute('subscriptions');
+    }
+
+    #[Route('/unsubscribe/all/{email}', name: 'unsubscribe_all')]
+    #[IsGranted('ROLE_USER')]
+    public function unsubscribeAll(string $email, EntityManagerInterface $em): Response
+    {
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+
+        if ($user) {
+            foreach ($user->getUserSubscriptions() as $subscription) {
+                $em->remove($subscription);
+            }
+
+            $em->flush();
+
+            return $this->render('emails/unsubscribe_success.html.twig', [
+                'message' => 'Вы отписались от всех уведомлений'
+            ]);
+        }
+
+        return $this->render('emails/unsubscribe_error.html.twig');
     }
 }

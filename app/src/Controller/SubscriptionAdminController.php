@@ -26,7 +26,6 @@ class SubscriptionAdminController extends AbstractController
             $em->persist($subscriptionType);
             $em->flush();
 
-            $this->addFlash('success', 'Subscription type created successfully!');
             return $this->redirectToRoute('subscriptions');
         }
 

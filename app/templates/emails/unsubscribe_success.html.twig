@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="alert alert-success">
+        <h4 class="alert-heading">Отписка выполнена</h4>
+        <p>{{ message }}</p>
+        <hr>
+        <p class="mb-0">Вы можете вернуться на <a href="{{ path('index') }}">главную страницу</a></p>
+    </div>
+</div>
+{% endblock %}

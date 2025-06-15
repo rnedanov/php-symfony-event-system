@@ -16,7 +16,7 @@
             {% include 'navigation.html.twig' %}
         </nav>
         <main class="container my-4 flex-fill">
-            {% block body %}<h1>Добро пожаловать!</h1>{% endblock %}
+            {% block body %}<h1>Добро пожаловать, {{ app.user.name|default("Гость") }}!</h1>{% endblock %}
         </main>
     </body>
 </html>
