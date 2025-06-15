@@ -5,10 +5,12 @@ namespace App\Controller;
 use App\Entity\SubscriptionType;
 use App\Entity\User;
 use App\Entity\UserSubscription;
+use App\Event\SubscriptionCreatedEvent;
 use App\Service\NotificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,12 +18,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class UserController extends AbstractController
 {
+    public function __construct(
+        private EntityManagerInterface $em,
+        private Security $security,
+        private EventDispatcherInterface $dispatcher
+    ) {
+    }
+
     #[Route('/subscriptions', name: 'subscriptions')]
     #[IsGranted('ROLE_USER')]
-    public function subs(EntityManagerInterface $em, Security $security): Response
+    public function subs(): Response
     {
-        $user = $security->getUser();
-        $allSubscriptionTypes = $em->getRepository(SubscriptionType::class)->findAll();
+        $user = $this->security->getUser();
+        $allSubscriptionTypes = $this->em->getRepository(SubscriptionType::class)->findAll();
 
         $userSubscriptionTypes = array_map(
             fn(UserSubscription $us) => $us->getSubscriptionType(),
@@ -36,13 +45,9 @@ final class UserController extends AbstractController
 
     #[Route('/save-subscriptions', name: 'save_subscriptions', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function save(
-        Request $request,
-        EntityManagerInterface $em,
-        Security $security,
-        NotificationService $notificationService
-    ): Response {
-        $user = $security->getUser();
+    public function save(Request $request): Response
+    {
+        $user = $this->security->getUser();
         $subscriptionTypeIds = $request->request->all()['subscriptions'] ?? [];
 
         $currentSubscriptionIds = array_map(
@@ -53,42 +58,43 @@ final class UserController extends AbstractController
         $newSubscriptionIds = array_diff($subscriptionTypeIds, $currentSubscriptionIds);
 
         foreach ($user->getUserSubscriptions() as $userSubscription) {
-            $em->remove($userSubscription);
+            $this->em->remove($userSubscription);
         }
 
         foreach ($subscriptionTypeIds as $typeId) {
-            $subscriptionType = $em->getRepository(SubscriptionType::class)->find($typeId);
+            $subscriptionType = $this->em->getRepository(SubscriptionType::class)->find($typeId);
 
             if ($subscriptionType) {
                 $userSubscription = new UserSubscription();
                 $userSubscription->setUser($user);
                 $userSubscription->setSubscriptionType($subscriptionType);
                 $userSubscription->setSubscribedAt(new \DateTime());
-                $em->persist($userSubscription);
+                $this->em->persist($userSubscription);
 
                 if (in_array($typeId, $newSubscriptionIds)) {
-                    $notificationService->sendSubscriptionNotification($user, $subscriptionType);
+                    $event = new SubscriptionCreatedEvent($user, $subscriptionType);
+                    $this->dispatcher->dispatch($event, SubscriptionCreatedEvent::NAME);
                 }
             }
         }
 
-        $em->flush();
+        $this->em->flush();
 
         return $this->redirectToRoute('subscriptions');
     }
 
     #[Route('/unsubscribe/all/{email}', name: 'unsubscribe_all')]
     #[IsGranted('ROLE_USER')]
-    public function unsubscribeAll(string $email, EntityManagerInterface $em): Response
+    public function unsubscribeAll(string $email): Response
     {
-        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
 
         if ($user) {
             foreach ($user->getUserSubscriptions() as $subscription) {
-                $em->remove($subscription);
+                $this->em->remove($subscription);
             }
 
-            $em->flush();
+            $this->em->flush();
 
             return $this->render('emails/unsubscribe_success.html.twig', [
                 'message' => 'Вы отписались от всех уведомлений'
