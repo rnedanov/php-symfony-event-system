@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -33,6 +35,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
+
+    #[ORM\OneToMany(targetEntity: UserSubscription::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $userSubscriptions;
+
+    public function __construct()
+    {
+        $this->roles = ['ROLE_USER'];
+        $this->userSubscriptions = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -117,5 +128,46 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->name = $name;
 
         return $this;
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array('ROLE_ADMIN', $this->roles);
+    }
+  /**
+     * @return Collection|UserSubscription[]
+     */
+    public function getUserSubscriptions(): Collection
+    {
+        return $this->userSubscriptions;
+    }
+
+    public function addUserSubscription(UserSubscription $userSubscription): self
+    {
+        if (!$this->userSubscriptions->contains($userSubscription)) {
+            $this->userSubscriptions[] = $userSubscription;
+            $userSubscription->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeUserSubscription(UserSubscription $userSubscription): self
+    {
+        if ($this->userSubscriptions->removeElement($userSubscription)) {
+            if ($userSubscription->getUser() === $this) {
+                $userSubscription->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * @return SubscriptionType[]
+     */
+    public function getSubscriptions(): array
+    {
+        return $this->userSubscriptions->map(
+            fn(UserSubscription $us) => $us->getSubscriptionType()
+        )->toArray();
     }
 }

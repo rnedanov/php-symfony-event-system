@@ -1,6 +1,9 @@
 <ul style="list-style: none; display: flex; gap: 10px; padding: 10px;">
     {% if app.user %}
         <li><a href="{{ path('subscriptions') }}">Управление подписками</a></li>
+        {% if is_granted('ROLE_ADMIN') %}
+            <li><a href="{{ path('subscription_type_new') }}">Создать подписку</a></li>
+        {% endif %}
         <li><a href="{{ path('logout') }}">Выйти</a></li>
     {% else %}
         <li><a href="{{ path('login') }}">Войти</a></li>

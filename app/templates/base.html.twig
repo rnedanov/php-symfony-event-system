@@ -16,8 +16,7 @@
             {% include 'navigation.html.twig' %}
         </nav>
         <main class="container my-4 flex-fill">
-            <h1>Добро пожаловать!</h1>
-            {% block body %}{% endblock %}
+            {% block body %}<h1>Добро пожаловать!</h1>{% endblock %}
         </main>
     </body>
 </html>
