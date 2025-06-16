@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Войти{% endblock %}
+
+{% block body %}
+    <h1>Войти</h1>
+
+    {{ form(loginForm) }}
+
+    {% if app.session.flashbag().has('error') %}
+        <div class="alert alert-danger">
+            {{ app.session.flashbag().get('error')[0] }}
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <div class="alert alert-danger">
+            {{ error.message }}
+        </div>
+    {% endif %}
+{% endblock %}

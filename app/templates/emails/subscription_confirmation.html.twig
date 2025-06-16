@@ -1,0 +1,21 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Подтверждение подписки{% endblock %}
+
+{% block header %}Вы успешно подписались!{% endblock %}
+
+{% block content %}
+    <p>Здравствуйте, {{ user.name }}!</p>
+
+    <p>Вы подписались на получение уведомлений по теме:</p>
+
+    <div class="subscription-card">
+        <h3>{{ subscriptionType.name }}</h3>
+    </div>
+
+    <p>Теперь вы будете получать новости и обновления по этой теме.</p>
+
+    <p>Если это произошло по ошибке, вы можете
+       <a href="{{ url('subscriptions') }}">управлять подписками</a>
+       в любое время.</p>
+{% endblock %}

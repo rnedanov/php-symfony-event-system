@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Создание новой подписки{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1>Создание новой подписки</h1>
+
+        {{ form_start(form) }}
+            <div class="form-group">
+                {{ form_label(form.name) }}
+                {{ form_widget(form.name, {'attr': {'class': 'form-control'}}) }}
+                {{ form_errors(form.name) }}
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Создать</button>
+            <a href="{{ path('subscriptions') }}" class="btn btn-secondary mt-3">Назад к подпискам</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

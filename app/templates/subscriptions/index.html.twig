@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Подписки{% endblock %}
+
+{% block body %}
+    <h1>Подписки</h1>
+    {% if allSubscriptionTypes|length == 0 %}
+        <p>Нет доступных подписок.</p>
+    {% else %}
+        <form method="post" action="{{ path('save_subscriptions') }}">
+            <ul>
+                {% for subscription in allSubscriptionTypes %}
+                    <li>
+                        <label>
+                            <input type="checkbox" name="subscriptions[]" value="{{ subscription.id }}"
+                                {% if subscription in userSubscriptionTypes %}checked{% endif %}>
+                            {{ subscription.name }}
+                        </label>
+                    </li>
+                {% endfor %}
+            </ul>
+            <button type="submit">Сохранить</button>
+        </form>
+    {% endif %}
+    {% if app.user %}
+        {% if app.user.isAdmin() %}
+            <a href="{{ path('subscription_type_new') }}">Создать новую подписку</a>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+
