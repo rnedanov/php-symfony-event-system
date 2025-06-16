@@ -17,7 +17,7 @@ class UserSubscription
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
-    #[ORM\ManyToOne(targetEntity: SubscriptionType::class)]
+    #[ORM\ManyToOne(targetEntity: SubscriptionType::class, inversedBy: 'userSubscriptions')]
     #[ORM\JoinColumn(nullable: false)]
     private ?SubscriptionType $subscriptionType = null;
 
