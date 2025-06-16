@@ -75,3 +75,71 @@ php bin/console doctrine:query:sql "TRUNCATE user_subscription;"
 ```bash
 php bin/console doctrine:query:sql "TRUNCATE messenger_messages;"
 ```
+
+# Рефакторинг кода (Задание 1)
+
+```php
+<?php
+//src/Controller/UserController.php
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Form\SearchType;
+use App\Repository\UserRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+final class UserController extends AbstractController
+{
+    #[Route('/users', name: 'user_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, UserRepository $userRepository): Response
+    {
+        $form = $this->createForm(SearchType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $query = $form->get('query')->getData();
+            $users = $userRepository->findByName((string) $query);
+        } else {
+            $users = $userRepository->findAll();
+        }
+
+        return $this->render('users/list.html.twig', [
+            'users' => $users,
+            'form' => $form->createView()
+        ]);
+    }
+}
+
+
+<?php
+//src/Repository/UserRepository.php
+namespace App\Repository;
+
+use App\Model\User;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+/**
+ * @extends ServiceEntityRepository<User>
+ */
+class UserRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, User::class);
+    }
+
+    public function findByName(string $name): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.name = :name')
+            ->setParameter('name', $name)
+            ->orderBy('u.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+}
