@@ -32,7 +32,7 @@
     cp .env.dev.local .env
 4. Установите зависимости:
     ```bash
-    docker exec -it symfony_event_app composer install
+    docker exec -it symfony_event_app composer install --no-dev
 5. Выполните миграции базы данных:
     ```bash
     docker exec symfony_event_app php bin/console doctrine:schema:update --force
