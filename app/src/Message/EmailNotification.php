@@ -4,17 +4,12 @@ namespace App\Message;
 
 class EmailNotification
 {
-    private string $recipient;
-    private string $subject;
-    private string $template;
-    private array $context;
-
-    public function __construct(string $recipient, string $subject, string $template, array $context = [])
-    {
-        $this->recipient = $recipient;
-        $this->subject = $subject;
-        $this->template = $template;
-        $this->context = $context;
+    public function __construct(
+        private string $recipient,
+        private string $subject,
+        private string $template,
+        private array $context = []
+    ) {
     }
 
     public function getRecipient(): string

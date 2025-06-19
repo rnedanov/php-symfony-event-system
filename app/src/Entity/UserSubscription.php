@@ -29,7 +29,6 @@ class UserSubscription
         $this->subscribedAt = new \DateTime();
     }
 
-    // Геттеры и сеттеры...
     public function getId(): ?int
     {
         return $this->id;

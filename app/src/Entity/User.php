@@ -134,7 +134,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return in_array('ROLE_ADMIN', $this->roles);
     }
-  /**
+
+    /**
      * @return Collection|UserSubscription[]
      */
     public function getUserSubscriptions(): Collection

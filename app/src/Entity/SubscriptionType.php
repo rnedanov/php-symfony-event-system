@@ -26,7 +26,6 @@ class SubscriptionType
         $this->userSubscriptions = new ArrayCollection();
     }
 
-    // Геттеры и сеттеры...
     public function getId(): ?int
     {
         return $this->id;
